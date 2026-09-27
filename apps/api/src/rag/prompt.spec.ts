@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals';
 import { buildGroundedPrompt } from './prompt';
 
 describe('buildGroundedPrompt', () => {
