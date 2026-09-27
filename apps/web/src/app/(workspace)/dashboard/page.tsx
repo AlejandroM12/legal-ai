@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Shell } from "@/components/shell";
 import { api } from "@/lib/api";
 import { formatDuration } from "@/lib/status";
 import { DocumentRecord, TraceRecord } from "@/lib/types";
@@ -17,9 +16,10 @@ export default function DashboardPage() {
   }, []);
 
   const ready = documents.filter((document) => document.status === "PROCESSED").length;
+  const latest = traces.slice(0, 8);
 
   return (
-    <Shell>
+    <>
       <h1 className="text-4xl">Panel</h1>
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <Stat label="Documentos" value={documents.length} />
@@ -29,13 +29,13 @@ export default function DashboardPage() {
       <section className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl">Últimas preguntas</h2>
-          <Link className="text-sm underline" href="/documents">
+          <Link className="btn btn-secondary" href="/documents">
             Subir PDF
           </Link>
         </div>
         <ul className="panel mt-4 divide-y divide-[var(--line)]">
-          {traces.length === 0 ? <li className="p-4 text-[var(--muted)]">Todavía no hay preguntas.</li> : null}
-          {traces.map((trace) => (
+          {latest.length === 0 ? <li className="p-4 text-[var(--muted)]">Todavía no hay preguntas.</li> : null}
+          {latest.map((trace) => (
             <li key={trace.id} className="p-4 text-sm">
               <p>{trace.question}</p>
               <p className="mt-1 text-[var(--muted)]">
@@ -45,7 +45,7 @@ export default function DashboardPage() {
           ))}
         </ul>
       </section>
-    </Shell>
+    </>
   );
 }
 

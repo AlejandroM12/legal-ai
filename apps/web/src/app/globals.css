@@ -1,12 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --paper: #f4f0e6;
+  --paper: #f3efe6;
   --ink: #1c1915;
   --muted: #5c564c;
   --line: #d9d1c3;
   --accent: #8c3a2f;
   --panel: #fffdf8;
+  --ready: #245c32;
+  --ready-bg: #e7f0e6;
+  --pending-bg: #efe6d4;
 }
 
 body {
@@ -17,6 +20,30 @@ body {
 
 h1, h2, h3 {
   font-family: var(--font-serif), Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+a,
+button,
+summary,
+label,
+select,
+[type="file"],
+[type="checkbox"],
+[type="radio"] {
+  cursor: pointer;
+}
+
+button:disabled,
+.btn:disabled,
+input:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .panel {
@@ -25,19 +52,24 @@ h1, h2, h3 {
 }
 
 .field {
-  margin-top: 0.25rem;
+  margin-top: 0.35rem;
   width: 100%;
   border: 1px solid var(--line);
   background: white;
-  padding: 0.5rem 0.75rem;
+  padding: 0.65rem 0.75rem;
 }
 
 .btn {
-  padding: 0.5rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.05rem;
+  line-height: 1;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 .btn-primary {
@@ -45,6 +77,49 @@ h1, h2, h3 {
   color: var(--paper);
 }
 
+.btn-primary:hover:not(:disabled) {
+  background: #322c26;
+}
+
 .btn-secondary {
   border: 1px solid var(--ink);
+  background: transparent;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn-ghost:hover {
+  background: rgb(28 25 21 / 6%);
+}
+
+.nav-link {
+  padding: 0.35rem 0.65rem;
+}
+
+.nav-link-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  background: var(--pending-bg);
+  color: var(--muted);
+}
+
+.badge-ready {
+  background: var(--ready-bg);
+  color: var(--ready);
+}
+
+.badge-failed {
+  background: #f6e4e1;
+  color: var(--accent);
 }

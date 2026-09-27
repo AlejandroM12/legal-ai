@@ -8,6 +8,7 @@ export default function LoginPage() {
       title="Iniciar sesión"
       lead="Acceso privado a tus documentos."
       submitLabel="Entrar"
+      pendingLabel="Entrando…"
       endpoint="/auth/login"
       alternateHref="/register"
       alternateLabel="Crear cuenta"

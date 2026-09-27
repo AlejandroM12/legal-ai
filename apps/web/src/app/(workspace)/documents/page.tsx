@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { Shell } from "@/components/shell";
 import { StatusBadge } from "@/components/status-badge";
 import { useDocuments } from "@/hooks/use-documents";
 import { api } from "@/lib/api";
@@ -41,7 +40,7 @@ export default function DocumentsPage() {
   }
 
   return (
-    <Shell>
+    <>
       <h1 className="text-4xl">Documentos</h1>
       <p className="mt-2 max-w-2xl text-[var(--muted)]">
         Subí un PDF. Cuando diga Listo, abrilo y hacé una pregunta. La respuesta cita la página del archivo.
@@ -59,17 +58,17 @@ export default function DocumentsPage() {
       <ul className="panel mt-6 divide-y divide-[var(--line)]">
         {documents.length === 0 ? <li className="p-4 text-[var(--muted)]">No hay documentos.</li> : null}
         {documents.map((document) => (
-          <li key={document.id} className="flex items-center justify-between gap-4 p-4">
-            <div>
-              <Link className="underline" href={`/documents/${document.id}`}>
-                {document.filename}
-              </Link>
-              <p className="mt-1">
-                <StatusBadge status={document.status} />
-                {document.errorMessage ? <span className="text-sm text-[var(--muted)]"> · {document.errorMessage}</span> : null}
-              </p>
-            </div>
-            <span className="text-sm text-[var(--muted)]">{formatBytes(document.size)}</span>
+          <li key={document.id}>
+            <Link href={`/documents/${document.id}`} className="flex items-center justify-between gap-4 p-4 hover:bg-[var(--paper)]">
+              <span className="min-w-0">
+                <span className="block truncate">{document.filename}</span>
+                <span className="mt-2 flex flex-wrap items-center gap-2">
+                  <StatusBadge status={document.status} />
+                  {document.errorMessage ? <span className="text-sm text-[var(--muted)]">{document.errorMessage}</span> : null}
+                </span>
+              </span>
+              <span className="shrink-0 text-sm text-[var(--muted)]">{formatBytes(document.size)}</span>
+            </Link>
           </li>
         ))}
       </ul>
@@ -97,6 +96,6 @@ export default function DocumentsPage() {
           </li>
         ))}
       </ul>
-    </Shell>
+    </>
   );
 }

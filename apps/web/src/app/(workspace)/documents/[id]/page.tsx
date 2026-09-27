@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { AnalysisPanel } from "@/components/document/analysis-panel";
 import { ChunkList } from "@/components/document/chunk-list";
 import { QuestionPanel } from "@/components/document/question-panel";
-import { Shell } from "@/components/shell";
+import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
 import { useDocument } from "@/hooks/use-document";
 import { api } from "@/lib/api";
@@ -64,8 +64,11 @@ export default function DocumentDetailPage() {
   }
 
   return (
-    <Shell>
-      <h1 className="text-4xl">{document?.filename ?? "Documento"}</h1>
+    <>
+      <Link href="/documents" className="text-sm text-[var(--muted)]">
+        Volver a documentos
+      </Link>
+      <h1 className="mt-3 text-4xl break-words">{document?.filename ?? "Documento"}</h1>
       <p className="mt-2">
         {document ? <StatusBadge status={document.status} /> : null}
         {document?.errorMessage ? <span className="text-sm text-[var(--muted)]"> · {document.errorMessage}</span> : null}
@@ -88,6 +91,6 @@ export default function DocumentDetailPage() {
         onAnalyze={onAnalyze}
       />
       <ChunkList chunks={chunks} />
-    </Shell>
+    </>
   );
 }

@@ -8,6 +8,7 @@ export default function RegisterPage() {
       title="Crear cuenta"
       lead="Tus documentos quedan separados de los de otras cuentas."
       submitLabel="Registrarme"
+      pendingLabel="Creando cuenta…"
       endpoint="/auth/register"
       alternateHref="/login"
       alternateLabel="Ya tengo cuenta"
