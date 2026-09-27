@@ -62,25 +62,28 @@ export class IngestionService {
           }),
         );
       }
-      if (created.length) {
-        await this.vectors.ensureCollection(this.embeddings.dimensions);
-        const vectors = await this.embeddings.embed(
-          created.map((chunk) => chunk.text),
-        );
-        await this.vectors.upsert(
-          created.map((chunk, index) => ({
-            id: chunk.id,
-            vector: vectors[index],
-            payload: {
-              user_id: document.userId,
-              document_id: documentId,
-              page: chunk.page,
-              chunk_id: chunk.id,
-              text: chunk.text,
-            },
-          })),
+      if (!created.length) {
+        throw new Error(
+          'El PDF no tiene texto legible. Si es una foto, el reconocimiento tampoco encontró letras.',
         );
       }
+      await this.vectors.ensureCollection(this.embeddings.dimensions);
+      const vectors = await this.embeddings.embed(
+        created.map((chunk) => chunk.text),
+      );
+      await this.vectors.upsert(
+        created.map((chunk, index) => ({
+          id: chunk.id,
+          vector: vectors[index],
+          payload: {
+            user_id: document.userId,
+            document_id: documentId,
+            page: chunk.page,
+            chunk_id: chunk.id,
+            text: chunk.text,
+          },
+        })),
+      );
       await this.prisma.document.update({
         where: { id: documentId },
         data: { status: 'PROCESSED' },
