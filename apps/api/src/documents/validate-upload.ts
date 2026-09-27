@@ -1,13 +1,17 @@
 import { BadRequestException } from '@nestjs/common';
 
-export function validatePdfUpload(
-  file: Express.Multer.File | undefined,
-  maxBytes: number,
-) {
+export interface PdfUpload {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
+export function validatePdfUpload(file: PdfUpload | undefined, maxBytes: number) {
   if (!file) {
     throw new BadRequestException('Archivo requerido');
   }
-  const name = file.originalname.replace(/[/\\]/g, '').trim();
+  const name = decodeUploadName(file.originalname).replace(/[/\\]/g, '').trim();
   if (!name || name.length > 255 || name.includes('\0')) {
     throw new BadRequestException('Nombre inválido');
   }
@@ -31,4 +35,13 @@ export function validatePdfUpload(
     throw new BadRequestException('Tamaño inválido');
   }
   return name;
+}
+
+export function decodeUploadName(originalname: string) {
+  if ([...originalname].some((char) => char.charCodeAt(0) > 255)) {
+    return originalname;
+  }
+  const decoded = Buffer.from(originalname, 'latin1').toString('utf8');
+  if (decoded.includes('\uFFFD')) return originalname;
+  return decoded;
 }

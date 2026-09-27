@@ -4,7 +4,7 @@ import { mkdir, writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { validatePdfUpload } from './validate-upload';
+import { PdfUpload, validatePdfUpload } from './validate-upload';
 import { IngestionService } from '../ingestion/ingestion.service';
 import { VECTOR_STORE } from '../retrieval/vector.tokens';
 import { VectorStore } from '../retrieval/vector-store';
@@ -19,7 +19,7 @@ export class DocumentsService {
     @Inject(VECTOR_STORE) private readonly vectors: VectorStore,
   ) {}
 
-  async create(userId: string, file: Express.Multer.File) {
+  async create(userId: string, file: PdfUpload) {
     const maxBytes = Number(
       this.config.get('MAX_UPLOAD_BYTES') ?? 20 * 1024 * 1024,
     );

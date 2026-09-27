@@ -12,6 +12,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DocumentsService } from './documents.service';
+import { PdfUpload } from './validate-upload';
 
 @Controller('documents')
 @UseGuards(JwtAuthGuard)
@@ -24,7 +25,7 @@ export class DocumentsController {
   )
   create(
     @CurrentUser() user: { userId: string },
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: PdfUpload,
   ) {
     return this.documents.create(user.userId, file);
   }
