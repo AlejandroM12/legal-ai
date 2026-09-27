@@ -2,14 +2,15 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AgentsModule } from './agents/agents.module';
+import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
+import { requestIdMiddleware } from './common/request-id.middleware';
 import { DocumentsModule } from './documents/documents.module';
 import { ObservabilityModule } from './observability/observability.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { RagModule } from './rag/rag.module';
 import { RetrievalModule } from './retrieval/retrieval.module';
-import { AppController } from './app.controller';
-import { requestIdMiddleware } from './common/request-id.middleware';
-import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -21,9 +22,10 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     AuthModule,
     DocumentsModule,
-    ObservabilityModule,
-    RagModule,
     RetrievalModule,
+    RagModule,
+    AgentsModule,
+    ObservabilityModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
