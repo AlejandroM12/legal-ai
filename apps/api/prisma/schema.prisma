@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String          @map("password_hash")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  documents    Document[]
+  auditLogs    AuditLog[]
+  traces       QuestionTrace[]
+
+  @@map("users")
+}
+
+model Document {
+  id           String         @id @default(uuid())
+  userId       String         @map("user_id")
+  filename     String
+  status       DocumentStatus @default(UPLOADED)
+  mimeType     String         @map("mime_type")
+  size         Int
+  storagePath  String         @map("storage_path")
+  errorMessage String?        @map("error_message")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pages        DocumentPage[]
+  chunks       Chunk[]
+
+  @@index([userId])
+  @@map("documents")
+}
+
+model DocumentPage {
+  id         String   @id @default(uuid())
+  documentId String   @map("document_id")
+  page       Int
+  text       String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, page])
+  @@map("document_pages")
+}
+
+model Chunk {
+  id         String   @id @default(uuid())
+  documentId String   @map("document_id")
+  userId     String   @map("user_id")
+  page       Int
+  chunkIndex Int      @map("chunk_index")
+  text       String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([userId])
+  @@map("chunks")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  action     String
+  resource   String
+  resourceId String?  @map("resource_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
+
+model QuestionTrace {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  question         String
+  model            String
+  embeddingMs      Int      @map("embedding_ms")
+  retrievalMs      Int      @map("retrieval_ms")
+  llmMs            Int      @map("llm_ms")
+  totalMs          Int      @map("total_ms")
+  retrievedChunks  Int      @map("retrieved_chunks")
+  promptTokens     Int?     @map("prompt_tokens")
+  completionTokens Int?     @map("completion_tokens")
+  error            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("question_traces")
+}

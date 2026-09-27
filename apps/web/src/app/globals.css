@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f4f0e6;
+  --ink: #1c1915;
+  --muted: #5c564c;
+  --line: #d9d1c3;
+  --accent: #8c3a2f;
+  --panel: #fffdf8;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), "Segoe UI", sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-serif), Georgia, serif;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.field {
+  margin-top: 0.25rem;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: white;
+  padding: 0.5rem 0.75rem;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn-secondary {
+  border: 1px solid var(--ink);
+}

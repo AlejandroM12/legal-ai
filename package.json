@@ -1,0 +1,20 @@
+{
+  "name": "legal-ai",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @legal-ai/web",
+    "dev:api": "npm run dev -w @legal-ai/api",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:generate": "npm run prisma:generate -w @legal-ai/api",
+    "db:migrate": "npm run prisma:migrate -w @legal-ai/api"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
