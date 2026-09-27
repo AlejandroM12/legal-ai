@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { DocumentsModule } from './documents/documents.module';
 import { ObservabilityModule } from './observability/observability.module';
+import { RagModule } from './rag/rag.module';
 import { RetrievalModule } from './retrieval/retrieval.module';
 import { AppController } from './app.controller';
 import { requestIdMiddleware } from './common/request-id.middleware';
@@ -21,6 +22,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuthModule,
     DocumentsModule,
     ObservabilityModule,
+    RagModule,
     RetrievalModule,
   ],
   controllers: [AppController],

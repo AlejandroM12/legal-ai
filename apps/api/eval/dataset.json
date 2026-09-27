@@ -1,0 +1,12 @@
+[
+  {
+    "question": "¿Cuánto dura el contrato?",
+    "expected_answer": "24 meses",
+    "expected_sources": [{ "page": 12 }]
+  },
+  {
+    "question": "¿Quiénes son las partes?",
+    "expected_answer": "Acme SA",
+    "expected_sources": [{ "page": 1 }]
+  }
+]
