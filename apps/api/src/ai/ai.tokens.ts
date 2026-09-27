@@ -1,0 +1,2 @@
+export const EMBEDDING_PROVIDER = Symbol('EMBEDDING_PROVIDER');
+export const CHAT_PROVIDER = Symbol('CHAT_PROVIDER');
