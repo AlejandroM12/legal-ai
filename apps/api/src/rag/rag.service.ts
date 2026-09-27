@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CHAT_PROVIDER } from '../ai/ai.tokens';
 import { ChatProvider } from '../ai/ai.types';
 import { RetrievalService } from '../retrieval/retrieval.service';
+import { VectorHit } from '../retrieval/vector-store';
 import { TraceService } from '../observability/trace.service';
 import { buildGroundedPrompt } from './prompt';
 
@@ -30,8 +31,30 @@ export class RagService {
     }
 
     const embeddingStarted = Date.now();
-    const hits = await this.retrieval.search(question, { userId, documentId });
+    let hits = await this.retrieval.search(question, { userId, documentId });
+    if (documentId && hits.length === 0) {
+      hits = await this.openingChunks(userId, documentId);
+    }
     const embeddingMs = Date.now() - embeddingStarted;
+    if (hits.length === 0) {
+      const answer = documentId
+        ? 'Este PDF no tiene texto para leer. Si es una foto o un escaneo, volvé a subirlo.'
+        : 'No encontré fragmentos para responder.';
+      const trace = await this.traces.record({
+        userId,
+        question,
+        model: this.chat.model,
+        embeddingMs,
+        retrievalMs: embeddingMs,
+        llmMs: 0,
+        totalMs: Date.now() - started,
+        retrievedChunks: 0,
+        promptTokens: null,
+        completionTokens: null,
+        error: null,
+      });
+      return { answer, citations: [], traceId: trace.id };
+    }
     const documents = await this.prisma.document.findMany({
       where: {
         userId,
@@ -96,6 +119,36 @@ export class RagService {
       error,
     });
 
-    return { answer, citations, traceId: trace.id };
+    return { answer, citations: uniquePages(citations), traceId: trace.id };
   }
+
+  private async openingChunks(
+    userId: string,
+    documentId: string,
+  ): Promise<VectorHit[]> {
+    const chunks = await this.prisma.chunk.findMany({
+      where: { documentId, userId },
+      orderBy: [{ page: 'asc' }, { chunkIndex: 'asc' }],
+      take: 4,
+    });
+    return chunks.map((chunk) => ({
+      chunkId: chunk.id,
+      documentId: chunk.documentId,
+      page: chunk.page,
+      text: chunk.text,
+      score: 0,
+    }));
+  }
+}
+
+function uniquePages<T extends { filename: string; page: number }>(
+  citations: T[],
+) {
+  const seen = new Set<string>();
+  return citations.filter((citation) => {
+    const key = `${citation.filename}:${citation.page}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
