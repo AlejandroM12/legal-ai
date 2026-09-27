@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: legal
+          POSTGRES_PASSWORD: legal
+          POSTGRES_DB: legal_ai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U legal -d legal_ai"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      qdrant:
+        image: qdrant/qdrant:v1.13.4
+        ports:
+          - 6333:6333
+    env:
+      DATABASE_URL: postgresql://legal:legal@localhost:5432/legal_ai
+      QDRANT_URL: http://localhost:6333
+      JWT_SECRET: ci-secret
+      AI_PROVIDER: mock
+      VECTOR_STORE: memory
+      EMBEDDING_DIMENSIONS: "64"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run db:generate
+      - run: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: npm run test:e2e -w @legal-ai/web
+        env:
+          CI: true
