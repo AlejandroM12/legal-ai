@@ -4,7 +4,9 @@ El navegador habla con Next.js. Next.js llama a la API NestJS con un JWT Bearer.
 
 NestJS persiste usuarios, documentos, páginas, chunks, auditoría y trazas en PostgreSQL. Los PDF quedan en disco local. Los vectores van a Qdrant en la colección `legal_chunks`, con `user_id` en el payload.
 
-La ingesta corre en el proceso de la API: parseo por página con pdfjs, chunking con overlap, embeddings en Ollama y upsert en Qdrant. El estado del documento pasa por `UPLOADED`, `PROCESSING`, `PROCESSED` o `FAILED`.
+La ingesta corre en el proceso de la API: parseo por página con pdfjs, chunking con overlap, embeddings y upsert. Antes de reindexar se borran los vectores de ese documento. Si la API se reinicia, retoma los que quedaron en `UPLOADED` o `PROCESSING`. El estado pasa por `UPLOADED`, `PROCESSING`, `PROCESSED` o `FAILED`.
+
+Ollama queda en el host, en `http://localhost:11434`. No entra en Compose: la inferencia local se deja fuera de los contenedores a propósito. Desde la API en Docker la URL es `http://host.docker.internal:11434`.
 
 Las preguntas arman un prompt con el texto del PDF delimitado como dato. El agente usa tool calling nativo, sin LangChain.
 
