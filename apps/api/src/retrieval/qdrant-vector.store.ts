@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import {
@@ -10,14 +10,15 @@ import {
 
 @Injectable()
 export class QdrantVectorStore implements VectorStore {
-  private readonly logger = new Logger(QdrantVectorStore.name);
   private readonly client: QdrantClient;
   private readonly collection: string;
   private ready = false;
 
   constructor(config: ConfigService) {
+    const apiKey = config.get<string>('QDRANT_API_KEY');
     this.client = new QdrantClient({
       url: config.get<string>('QDRANT_URL') ?? 'http://localhost:6333',
+      ...(apiKey ? { apiKey } : {}),
     });
     this.collection = config.get<string>('QDRANT_COLLECTION') ?? 'legal_chunks';
   }
@@ -82,18 +83,21 @@ export class QdrantVectorStore implements VectorStore {
     });
   }
 
-  async deleteByDocument(documentId: string) {
+  async deleteByDocument(documentId: string, userId: string) {
     try {
       await this.client.delete(this.collection, {
         wait: true,
         filter: {
-          must: [{ key: 'document_id', match: { value: documentId } }],
+          must: [
+            { key: 'document_id', match: { value: documentId } },
+            { key: 'user_id', match: { value: userId } },
+          ],
         },
       });
     } catch (error) {
-      this.logger.warn(
-        `No se pudieron borrar vectores de ${documentId}: ${(error as Error).message}`,
-      );
+      const status = (error as { status?: number }).status;
+      if (status === 404) return;
+      throw error;
     }
   }
 }

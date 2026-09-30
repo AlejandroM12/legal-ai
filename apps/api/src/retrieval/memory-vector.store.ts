@@ -46,9 +46,11 @@ export class MemoryVectorStore implements VectorStore {
     );
   }
 
-  deleteByDocument(documentId: string) {
+  deleteByDocument(documentId: string, userId: string) {
     this.points = this.points.filter(
-      (point) => point.payload.document_id !== documentId,
+      (point) =>
+        point.payload.document_id !== documentId ||
+        point.payload.user_id !== userId,
     );
     return Promise.resolve();
   }

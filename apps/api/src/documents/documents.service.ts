@@ -92,7 +92,7 @@ export class DocumentsService {
 
   async remove(userId: string, id: string) {
     const document = await this.requireOwned(userId, id);
-    await this.vectors.deleteByDocument(id);
+    await this.vectors.deleteByDocument(id, userId);
     await this.prisma.document.delete({ where: { id } });
     await unlink(document.storagePath).catch(() => undefined);
     await this.audit.log(userId, 'delete', 'document', id);

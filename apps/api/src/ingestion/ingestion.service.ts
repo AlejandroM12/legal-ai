@@ -37,6 +37,8 @@ export class IngestionService {
         Number(this.config.get('CHUNK_SIZE') ?? 1200),
         Number(this.config.get('CHUNK_OVERLAP') ?? 150),
       );
+      await this.vectors.ensureCollection(this.embeddings.dimensions);
+      await this.vectors.deleteByDocument(documentId, document.userId);
       await this.prisma.documentPage.deleteMany({ where: { documentId } });
       await this.prisma.chunk.deleteMany({ where: { documentId } });
       if (pages.length) {
@@ -67,7 +69,6 @@ export class IngestionService {
           'El PDF no tiene texto legible. Si es una foto, el reconocimiento tampoco encontró letras.',
         );
       }
-      await this.vectors.ensureCollection(this.embeddings.dimensions);
       const vectors = await this.embeddings.embed(
         created.map((chunk) => chunk.text),
       );

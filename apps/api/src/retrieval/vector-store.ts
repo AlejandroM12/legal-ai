@@ -33,5 +33,5 @@ export interface VectorStore {
     limit: number,
     threshold: number,
   ): Promise<VectorHit[]>;
-  deleteByDocument(documentId: string): Promise<void>;
+  deleteByDocument(documentId: string, userId: string): Promise<void>;
 }
