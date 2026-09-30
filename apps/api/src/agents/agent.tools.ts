@@ -46,7 +46,8 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'generate_report',
-    description: 'Arma un informe con título y hallazgos ya recuperados.',
+    description:
+      'Arma un informe con la evidencia ya recuperada. El texto de findings no es una fuente nueva.',
     parameters: {
       type: 'object',
       properties: {

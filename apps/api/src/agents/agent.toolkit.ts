@@ -3,6 +3,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RetrievalService } from '../retrieval/retrieval.service';
 import { textArg } from './agent.tools';
 
+export interface AgentRunContext {
+  embeddingMs: number;
+  retrievalMs: number;
+  evidence: string[];
+}
+
 @Injectable()
 export class AgentToolkit {
   constructor(
@@ -14,14 +20,17 @@ export class AgentToolkit {
     userId: string,
     name: string,
     args: Record<string, unknown>,
-    documentIds?: string[],
+    documentIds: string[] | undefined,
+    context: AgentRunContext,
   ) {
     if (name === 'search_documents') return this.searchDocuments(userId, args);
     if (name === 'search_chunks')
-      return this.searchChunks(userId, args, documentIds);
-    if (name === 'get_document') return this.getDocument(userId, args);
-    if (name === 'get_page') return this.getPage(userId, args);
-    if (name === 'generate_report') return this.report(args);
+      return this.searchChunks(userId, args, documentIds, context);
+    if (name === 'get_document')
+      return this.getDocument(userId, args, documentIds);
+    if (name === 'get_page')
+      return this.getPage(userId, args, documentIds, context);
+    if (name === 'generate_report') return this.report(args, context);
     return 'Herramienta desconocida';
   }
 
@@ -45,7 +54,8 @@ export class AgentToolkit {
   private async searchChunks(
     userId: string,
     args: Record<string, unknown>,
-    documentIds?: string[],
+    documentIds: string[] | undefined,
+    context: AgentRunContext,
   ) {
     const documentId =
       typeof args.documentId === 'string' ? args.documentId : undefined;
@@ -57,10 +67,21 @@ export class AgentToolkit {
       documentId,
       documentIds: documentId ? undefined : documentIds,
     });
-    return JSON.stringify(searched.hits);
+    context.embeddingMs += searched.embeddingMs;
+    context.retrievalMs += searched.retrievalMs;
+    const output = JSON.stringify(searched.hits);
+    context.evidence.push(output);
+    return output;
   }
 
-  private async getDocument(userId: string, args: Record<string, unknown>) {
+  private async getDocument(
+    userId: string,
+    args: Record<string, unknown>,
+    documentIds: string[] | undefined,
+  ) {
+    if (outsideContext(documentIds, args)) {
+      return 'Documento fuera del contexto autorizado.';
+    }
     const document = await this.prisma.document.findFirst({
       where: { id: textArg(args.documentId), userId },
     });
@@ -72,7 +93,15 @@ export class AgentToolkit {
     });
   }
 
-  private async getPage(userId: string, args: Record<string, unknown>) {
+  private async getPage(
+    userId: string,
+    args: Record<string, unknown>,
+    documentIds: string[] | undefined,
+    context: AgentRunContext,
+  ) {
+    if (outsideContext(documentIds, args)) {
+      return 'Documento fuera del contexto autorizado.';
+    }
     const document = await this.prisma.document.findFirst({
       where: { id: textArg(args.documentId), userId },
     });
@@ -80,14 +109,28 @@ export class AgentToolkit {
     const page = await this.prisma.documentPage.findFirst({
       where: { documentId: document.id, page: Number(args.page) },
     });
-    return page?.text ?? 'Página sin texto';
+    const text = page?.text ?? 'Página sin texto';
+    context.evidence.push(text);
+    return text;
   }
 
-  private report(args: Record<string, unknown>) {
+  private report(args: Record<string, unknown>, context: AgentRunContext) {
     return [
       `# ${textArg(args.title, 'Informe')}`,
       '',
+      'Evidencia recuperada con herramientas:',
+      context.evidence.join('\n\n') || 'No se recuperó evidencia.',
+      '',
+      'Texto propuesto por el modelo. No es una fuente:',
       textArg(args.findings),
     ].join('\n');
   }
+}
+
+function outsideContext(
+  documentIds: string[] | undefined,
+  args: Record<string, unknown>,
+) {
+  const documentId = textArg(args.documentId);
+  return Boolean(documentIds?.length && !documentIds.includes(documentId));
 }

@@ -12,6 +12,7 @@ export interface TraceInput {
   retrievedChunks: number;
   promptTokens: number | null;
   completionTokens: number | null;
+  tools: string | null;
   error: string | null;
 }
 

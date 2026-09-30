@@ -95,6 +95,7 @@ model QuestionTrace {
   retrievedChunks  Int      @map("retrieved_chunks")
   promptTokens     Int?     @map("prompt_tokens")
   completionTokens Int?     @map("completion_tokens")
+  tools            String?  @map("tools")
   error            String?
   createdAt        DateTime @default(now()) @map("created_at")
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)

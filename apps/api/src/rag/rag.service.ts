@@ -58,6 +58,7 @@ export class RagService {
         promptTokens: null,
         completionTokens: null,
         error: null,
+        tools: null,
       });
       return { answer, citations: [], traceId: trace.id };
     }
@@ -123,6 +124,7 @@ export class RagService {
       promptTokens,
       completionTokens,
       error,
+      tools: null,
     });
 
     return { answer, citations: uniquePages(citations), traceId: trace.id };
