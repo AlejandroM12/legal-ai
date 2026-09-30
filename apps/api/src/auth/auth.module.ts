@@ -15,7 +15,7 @@ import { JwtStrategy } from './jwt.strategy';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET') ?? 'change-me-in-local-env',
+        secret: config.getOrThrow<string>('JWT_SECRET'),
         signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') ?? '1d' },
       }),
     }),

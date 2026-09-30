@@ -21,6 +21,7 @@ ollama --version
 
 ```bash
 cp .env.example .env
+# Definí JWT_SECRET con un valor propio. El de ejemplo no arranca la API.
 docker compose up postgres qdrant -d
 npm install
 npm run db:generate

@@ -1,0 +1,8 @@
+services:
+  qdrant:
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?Definí QDRANT_API_KEY}
+  api:
+    environment:
+      NODE_ENV: production
+      QDRANT_API_KEY: ${QDRANT_API_KEY:?Definí QDRANT_API_KEY}
