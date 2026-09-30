@@ -30,12 +30,18 @@ export class RagService {
       if (!owned) throw new NotFoundException('Documento no encontrado');
     }
 
-    const embeddingStarted = Date.now();
-    let hits = await this.retrieval.search(question, { userId, documentId });
+    const searched = await this.retrieval.search(question, {
+      userId,
+      documentId,
+    });
+    let hits = searched.hits;
+    const embeddingMs = searched.embeddingMs;
+    let retrievalMs = searched.retrievalMs;
     if (documentId && hits.length === 0) {
+      const fallbackStarted = Date.now();
       hits = await this.openingChunks(userId, documentId);
+      retrievalMs += Date.now() - fallbackStarted;
     }
-    const embeddingMs = Date.now() - embeddingStarted;
     if (hits.length === 0) {
       const answer = documentId
         ? 'Este PDF no tiene texto para leer. Si es una foto o un escaneo, volvé a subirlo.'
@@ -45,7 +51,7 @@ export class RagService {
         question,
         model: this.chat.model,
         embeddingMs,
-        retrievalMs: embeddingMs,
+        retrievalMs,
         llmMs: 0,
         totalMs: Date.now() - started,
         retrievedChunks: 0,
@@ -110,7 +116,7 @@ export class RagService {
       question,
       model: this.chat.model,
       embeddingMs,
-      retrievalMs: embeddingMs,
+      retrievalMs,
       llmMs,
       totalMs: Date.now() - started,
       retrievedChunks: citations.length,

@@ -18,7 +18,7 @@ export class SearchController {
     @CurrentUser() user: { userId: string },
     @Body() body: SearchDto,
   ) {
-    const hits = await this.retrieval.search(body.query, {
+    const { hits } = await this.retrieval.search(body.query, {
       userId: user.userId,
       documentId: body.documentId,
     });

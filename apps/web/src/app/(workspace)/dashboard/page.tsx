@@ -39,7 +39,7 @@ export default function DashboardPage() {
             <li key={trace.id} className="p-4 text-sm">
               <p>{trace.question}</p>
               <p className="mt-1 text-[var(--muted)]">
-                {trace.model} · búsqueda {formatDuration(trace.embeddingMs)} · {countLabel(trace.retrievedChunks, "fragmento", "fragmentos")} · respuesta {formatDuration(trace.llmMs)} · total {formatDuration(trace.totalMs)}
+                {trace.model} · embeddings {formatDuration(trace.embeddingMs)} · índice {formatDuration(trace.retrievalMs)} · {countLabel(trace.retrievedChunks, "fragmento", "fragmentos")} · respuesta {formatDuration(trace.llmMs)} · total {formatDuration(trace.totalMs)}
               </p>
             </li>
           ))}

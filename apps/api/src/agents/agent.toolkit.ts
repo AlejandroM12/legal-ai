@@ -52,12 +52,12 @@ export class AgentToolkit {
     if (documentId && documentIds && !documentIds.includes(documentId)) {
       return 'Documento fuera del contexto autorizado.';
     }
-    const hits = await this.retrieval.search(textArg(args.query), {
+    const searched = await this.retrieval.search(textArg(args.query), {
       userId,
       documentId,
       documentIds: documentId ? undefined : documentIds,
     });
-    return JSON.stringify(hits);
+    return JSON.stringify(searched.hits);
   }
 
   private async getDocument(userId: string, args: Record<string, unknown>) {

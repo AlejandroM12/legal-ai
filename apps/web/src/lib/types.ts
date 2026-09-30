@@ -39,5 +39,6 @@ export interface TraceRecord {
   retrievedChunks: number;
   llmMs: number;
   embeddingMs: number;
+  retrievalMs: number;
   model: string;
 }
