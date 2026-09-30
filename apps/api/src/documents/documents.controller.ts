@@ -35,6 +35,11 @@ export class DocumentsController {
     return this.documents.list(user.userId);
   }
 
+  @Post(':id/reprocess')
+  reprocess(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
+    return this.documents.reprocess(user.userId, id);
+  }
+
   @Get(':id')
   get(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
     return this.documents.get(user.userId, id);

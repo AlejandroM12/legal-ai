@@ -90,6 +90,20 @@ export class DocumentsService {
     }));
   }
 
+  async reprocess(userId: string, id: string) {
+    const document = await this.requireOwned(userId, id);
+    await this.prisma.document.update({
+      where: { id },
+      data: { status: 'PROCESSING', errorMessage: null },
+    });
+    void this.ingestion.process(id);
+    return this.toRecord({
+      ...document,
+      status: 'PROCESSING',
+      errorMessage: null,
+    });
+  }
+
   async remove(userId: string, id: string) {
     const document = await this.requireOwned(userId, id);
     await this.vectors.deleteByDocument(id, userId);

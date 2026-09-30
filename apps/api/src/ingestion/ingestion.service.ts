@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { readFile } from 'fs/promises';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,7 +10,7 @@ import { VECTOR_STORE } from '../retrieval/vector.tokens';
 import { VectorStore } from '../retrieval/vector-store';
 
 @Injectable()
-export class IngestionService {
+export class IngestionService implements OnModuleInit {
   private readonly logger = new Logger(IngestionService.name);
 
   constructor(
@@ -19,6 +19,16 @@ export class IngestionService {
     @Inject(EMBEDDING_PROVIDER) private readonly embeddings: EmbeddingProvider,
     @Inject(VECTOR_STORE) private readonly vectors: VectorStore,
   ) {}
+
+  async onModuleInit() {
+    if (process.env.NODE_ENV === 'test') return;
+    const stuck = await this.prisma.document.findMany({
+      where: { status: { in: ['UPLOADED', 'PROCESSING'] } },
+    });
+    for (const document of stuck) {
+      void this.process(document.id);
+    }
+  }
 
   async process(documentId: string) {
     const document = await this.prisma.document.findUnique({

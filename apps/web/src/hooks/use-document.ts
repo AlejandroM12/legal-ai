@@ -43,5 +43,6 @@ export function useDocument(id: string) {
     error,
     setError,
     ready: document?.status === "PROCESSED",
+    reload,
   };
 }

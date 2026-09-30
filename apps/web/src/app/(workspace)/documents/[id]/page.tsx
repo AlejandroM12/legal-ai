@@ -13,7 +13,8 @@ import { AskResponse } from "@/lib/types";
 
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
-  const { document, chunks, error, setError, ready } = useDocument(params.id);
+  const { document, chunks, error, setError, ready, reload } = useDocument(params.id);
+  const [reprocessing, setReprocessing] = useState(false);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<AskResponse | null>(null);
   const [agentMessage, setAgentMessage] = useState("");
@@ -38,6 +39,19 @@ export default function DocumentDetailPage() {
       setError((caught as Error).message);
     } finally {
       setAsking(false);
+    }
+  }
+
+  async function onReprocess() {
+    setError("");
+    setReprocessing(true);
+    try {
+      await api(`/documents/${params.id}/reprocess`, { method: "POST" });
+      await reload();
+    } catch (caught) {
+      setError((caught as Error).message);
+    } finally {
+      setReprocessing(false);
     }
   }
 
@@ -73,6 +87,16 @@ export default function DocumentDetailPage() {
         {document ? <StatusBadge status={document.status} /> : null}
         {document?.errorMessage ? <span className="text-sm text-[var(--muted)]"> · {document.errorMessage}</span> : null}
       </p>
+      {document ? (
+        <button
+          className="btn btn-secondary mt-4"
+          type="button"
+          disabled={reprocessing || document.status === "PROCESSING" || document.status === "UPLOADED"}
+          onClick={() => void onReprocess()}
+        >
+          {reprocessing ? "Leyendo de nuevo…" : "Volver a leer"}
+        </button>
+      ) : null}
       {error ? <p className="mt-3 text-sm text-[var(--accent)]">{error}</p> : null}
       <QuestionPanel
         ready={ready}
