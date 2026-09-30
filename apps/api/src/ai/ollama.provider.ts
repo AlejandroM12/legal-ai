@@ -52,6 +52,7 @@ export class OllamaProvider implements EmbeddingProvider, ChatProvider {
       body: JSON.stringify({
         model: this.model,
         stream: false,
+        ...(tools?.length ? {} : { format: 'json' }),
         messages: messages.map((message) => ({
           role: message.role === 'tool' ? 'tool' : message.role,
           content: message.content,

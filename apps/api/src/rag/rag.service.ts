@@ -1,7 +1,7 @@
 import {
-  ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,10 +10,17 @@ import { ChatProvider } from '../ai/ai.types';
 import { RetrievalService } from '../retrieval/retrieval.service';
 import { VectorHit } from '../retrieval/vector-store';
 import { TraceService } from '../observability/trace.service';
+import { asksForOverview, groundAnswer } from './grounding';
 import { buildGroundedPrompt } from './prompt';
+
+const NO_TEXT =
+  'Este PDF no tiene texto para leer. Si es una foto o un escaneo, volvé a subirlo.';
+const NO_HITS = 'No encontré evidencia suficiente en el documento.';
 
 @Injectable()
 export class RagService {
+  private readonly logger = new Logger(RagService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly retrieval: RetrievalService,
@@ -35,17 +42,32 @@ export class RagService {
       documentId,
     });
     let hits = searched.hits;
-    const embeddingMs = searched.embeddingMs;
     let retrievalMs = searched.retrievalMs;
-    if (documentId && hits.length === 0) {
+    const embeddingMs = searched.embeddingMs;
+    if (documentId && hits.length === 0 && asksForOverview(question)) {
       const fallbackStarted = Date.now();
       hits = await this.openingChunks(userId, documentId);
       retrievalMs += Date.now() - fallbackStarted;
     }
-    if (hits.length === 0) {
-      const answer = documentId
-        ? 'Este PDF no tiene texto para leer. Si es una foto o un escaneo, volvé a subirlo.'
-        : 'No encontré fragmentos para responder.';
+    const documents = await this.prisma.document.findMany({
+      where: {
+        userId,
+        id: { in: [...new Set(hits.map((hit) => hit.documentId))] },
+      },
+    });
+    const ownedIds = new Set(documents.map((document) => document.id));
+    const kept = selectOwnedHits(hits, ownedIds);
+    if (kept.length !== hits.length) {
+      this.logger.warn(
+        `Se descartaron ${hits.length - kept.length} hits sin documento propio`,
+      );
+    }
+    const filenames = new Map(
+      documents.map((document) => [document.id, document.filename]),
+    );
+    if (kept.length === 0) {
+      const answer =
+        documentId && asksForOverview(question) ? NO_TEXT : NO_HITS;
       const trace = await this.traces.record({
         userId,
         question,
@@ -60,31 +82,16 @@ export class RagService {
         error: null,
         tools: null,
       });
-      return { answer, citations: [], traceId: trace.id };
+      return { answer, citations: [], traceId: trace.id, abstained: true };
     }
-    const documents = await this.prisma.document.findMany({
-      where: {
-        userId,
-        id: { in: [...new Set(hits.map((hit) => hit.documentId))] },
-      },
-    });
-    const filenames = new Map(
-      documents.map((document) => [document.id, document.filename]),
-    );
-    const citations = hits
-      .filter((hit) => filenames.has(hit.documentId))
-      .map((hit) => ({
-        documentId: hit.documentId,
-        filename: filenames.get(hit.documentId) ?? 'documento',
-        page: hit.page,
-        chunkId: hit.chunkId,
-        text: hit.text,
-        score: hit.score,
-      }));
-
-    if (citations.length !== hits.length) {
-      throw new ForbiddenException('El retrieval incluyó documentos ajenos');
-    }
+    const citations = kept.map((hit) => ({
+      documentId: hit.documentId,
+      filename: filenames.get(hit.documentId) ?? 'documento',
+      page: hit.page,
+      chunkId: hit.chunkId,
+      text: hit.text,
+      score: hit.score,
+    }));
 
     const prompt = buildGroundedPrompt(
       question,
@@ -95,7 +102,12 @@ export class RagService {
       })),
     );
     const llmStarted = Date.now();
-    let answer = 'El documento no lo indica.';
+    let grounded = {
+      answer: 'No se pudo generar la respuesta.',
+      citations: [] as typeof citations,
+      abstained: true,
+      grounded: false,
+    };
     let error: string | null = null;
     let promptTokens: number | null = null;
     let completionTokens: number | null = null;
@@ -104,12 +116,11 @@ export class RagService {
         { role: 'system', content: prompt.system },
         { role: 'user', content: prompt.user },
       ]);
-      answer = result.content.trim() || answer;
+      grounded = groundAnswer(result.content, citations);
       promptTokens = result.promptTokens;
       completionTokens = result.completionTokens;
     } catch (caught) {
       error = (caught as Error).message;
-      answer = 'No se pudo generar la respuesta.';
     }
     const llmMs = Date.now() - llmStarted;
     const trace = await this.traces.record({
@@ -127,7 +138,13 @@ export class RagService {
       tools: null,
     });
 
-    return { answer, citations: uniquePages(citations), traceId: trace.id };
+    return {
+      answer: grounded.answer,
+      citations: grounded.citations,
+      traceId: trace.id,
+      abstained: grounded.abstained,
+      grounded: grounded.grounded,
+    };
   }
 
   private async openingChunks(
@@ -149,14 +166,9 @@ export class RagService {
   }
 }
 
-function uniquePages<T extends { filename: string; page: number }>(
-  citations: T[],
+export function selectOwnedHits<T extends { documentId: string }>(
+  hits: T[],
+  ownedIds: Set<string>,
 ) {
-  const seen = new Set<string>();
-  return citations.filter((citation) => {
-    const key = `${citation.filename}:${citation.page}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return hits.filter((hit) => ownedIds.has(hit.documentId));
 }

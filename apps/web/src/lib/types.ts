@@ -18,11 +18,14 @@ export interface Citation {
   page: number;
   text: string;
   chunkId: string;
+  score?: number;
 }
 
 export interface AskResponse {
   answer: string;
   citations: Citation[];
+  abstained?: boolean;
+  grounded?: boolean;
 }
 
 export interface SearchHit {

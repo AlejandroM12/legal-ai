@@ -48,6 +48,23 @@ export class MockAiProvider implements EmbeddingProvider, ChatProvider {
       .filter((message) => message.role === 'tool' || message.role === 'user')
       .map((message) => message.content)
       .join('\n');
+    if (evidence.includes('BEGIN EVIDENCE_')) {
+      const used = [...evidence.matchAll(/BEGIN EVIDENCE_[0-9a-f]+ (\d+)/g)]
+        .map((match) => Number(match[1]))
+        .filter((index) => index > 0);
+      const snippet = evidence.match(/El[\s\S]{0,180}/)?.[0]?.split('\n')[0] ?? '';
+      const content = JSON.stringify(
+        used.length && snippet
+          ? { answer: snippet, used: [used[0]], abstained: false }
+          : { answer: 'El documento no lo indica.', used: [], abstained: true },
+      );
+      return Promise.resolve({
+        content,
+        toolCalls: [],
+        promptTokens: question.length,
+        completionTokens: content.length,
+      });
+    }
     const grounded =
       evidence.match(/El[\s\S]{0,240}/)?.[0] ??
       'No hay evidencia suficiente en los documentos.';

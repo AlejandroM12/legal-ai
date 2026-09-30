@@ -29,11 +29,17 @@ export function QuestionPanel({ ready, asking, question, answer, onQuestion, onA
       </button>
       {answer ? (
         <div className="border-t border-[var(--line)] pt-3 text-sm">
-          <p>{answer.answer}</p>
-          <ul className="mt-3 space-y-2 text-[var(--muted)]">
+          {answer.abstained ? <p className="text-[var(--muted)]">Sin evidencia suficiente en el documento.</p> : null}
+          {answer.grounded ? <p className="text-[var(--muted)]">Citas comprobadas contra los fragmentos recuperados.</p> : null}
+          <p className="mt-2">{answer.answer}</p>
+          <ul className="mt-3 space-y-3 text-[var(--muted)]">
             {answer.citations.map((citation) => (
               <li key={citation.chunkId}>
-                Fuente: {citation.filename} · página {citation.page}
+                <p>
+                  Fuente: {citation.filename} · página {citation.page}
+                  {typeof citation.score === "number" ? ` · similitud ${citation.score.toFixed(2)}` : ""}
+                </p>
+                <p className="mt-1 text-[var(--ink)]">{citation.text}</p>
               </li>
             ))}
           </ul>
